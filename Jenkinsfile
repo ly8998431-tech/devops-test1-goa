@@ -16,6 +16,8 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 echo 'Static HTML project - no dependencies required'
+                bat 'node --version'
+                bat 'npm --version'
             }
         }
 
@@ -30,8 +32,18 @@ pipeline {
 
         stage('Deploy') {
             steps {
-                echo 'Deploy stage reached'
-                echo 'Website: https://effortless-griffin-565515.netlify.app'
+                withCredentials([
+                    string(
+                        credentialsId: 'netlify-token',
+                        variable: 'NETLIFY_AUTH_TOKEN'
+                    ),
+                    string(
+                        credentialsId: 'netlify-site-id',
+                        variable: 'NETLIFY_SITE_ID'
+                    )
+                ]) {
+                    bat 'npx --yes netlify-cli deploy --prod --dir . --site "%NETLIFY_SITE_ID%" --auth "%NETLIFY_AUTH_TOKEN%"'
+                }
             }
         }
     }
@@ -39,7 +51,9 @@ pipeline {
     post {
         success {
             echo 'PIPELINE SUCCESS'
+            echo 'Website: https://effortless-griffin-565515.netlify.app'
         }
+
         failure {
             echo 'PIPELINE FAILED - Check Console Output'
         }
