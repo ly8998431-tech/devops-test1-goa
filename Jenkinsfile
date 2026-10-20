@@ -1,3 +1,4 @@
+﻿
 pipeline {
     agent any
 
@@ -42,7 +43,7 @@ pipeline {
                         variable: 'NETLIFY_SITE_ID'
                     )
                 ]) {
-                    bat 'npx --yes netlify-cli deploy --prod --dir . --site "%NETLIFY_SITE_ID%" --auth "%NETLIFY_AUTH_TOKEN%"'
+                    bat 'set "npm_config_cache=%WORKSPACE%\\.npm-cache" && npx --yes netlify-cli@latest deploy --prod --dir . --site "%NETLIFY_SITE_ID%" --auth "%NETLIFY_AUTH_TOKEN%"'
                 }
             }
         }
