@@ -33,14 +33,8 @@ pipeline {
         stage('Deploy') {
             steps {
                 withCredentials([
-                    string(
-                        credentialsId: 'netlify-token',
-                        variable: 'NETLIFY_AUTH_TOKEN'
-                    ),
-                    string(
-                        credentialsId: 'netlify-site-id',
-                        variable: 'NETLIFY_SITE_ID'
-                    )
+                    string(credentialsId: 'netlify-token', variable: 'NETLIFY_AUTH_TOKEN'),
+                    string(credentialsId: 'netlify-site-id', variable: 'NETLIFY_SITE_ID')
                 ]) {
                     bat 'set "npm_config_cache=%WORKSPACE%\\.npm-cache" && npx --yes netlify-cli@latest deploy --prod --dir . --site "%NETLIFY_SITE_ID%" --auth "%NETLIFY_AUTH_TOKEN%"'
                 }
@@ -56,31 +50,28 @@ pipeline {
             script {
                 try {
                     withCredentials([
-                        string(
-                            credentialsId: 'telegram-token',
-                            variable: 'TELEGRAM_BOT_TOKEN'
-                        )
+                        string(credentialsId: 'telegram-token', variable: 'TELEGRAM_BOT_TOKEN')
                     ]) {
                         powershell '''
                             $ErrorActionPreference = 'Stop'
+                            $token = $env:TELEGRAM_BOT_TOKEN.Trim()
                             $chatId = '8809459598'
-                            $msg = "✅ DEPLOY SUCCESS`nProject: devops-test`nBranch: main`nURL: https://effortless-griffin-565515.netlify.app"
 
-                            $uri = "https://api.telegram.org/bot$env:TELEGRAM_BOT_TOKEN/sendMessage"
+                            $me = Invoke-RestMethod -Uri "https://api.telegram.org/bot$token/getMe" -Method Get
+                            Write-Host "Telegram bot: $($me.result.username)"
+
+                            $msg = "DEPLOY SUCCESS`nProject: devops-test`nBranch: main`nURL: https://effortless-griffin-565515.netlify.app"
 
                             Invoke-RestMethod `
-                                -Uri $uri `
+                                -Uri "https://api.telegram.org/bot$token/sendMessage" `
                                 -Method Post `
-                                -Body @{
-                                    chat_id = $chatId
-                                    text = $msg
-                                } | Out-Null
+                                -Body @{ chat_id = $chatId; text = $msg } | Out-Null
 
                             Write-Host 'Telegram success notification sent'
                         '''
                     }
                 } catch {
-                    echo 'Telegram success notification failed. Check credentials and chat ID.'
+                    echo 'Telegram notification failed; check the Jenkins log. Build and Deploy have already succeeded.'
                 }
             }
         }
@@ -91,31 +82,28 @@ pipeline {
             script {
                 try {
                     withCredentials([
-                        string(
-                            credentialsId: 'telegram-token',
-                            variable: 'TELEGRAM_BOT_TOKEN'
-                        )
+                        string(credentialsId: 'telegram-token', variable: 'TELEGRAM_BOT_TOKEN')
                     ]) {
                         powershell '''
                             $ErrorActionPreference = 'Stop'
+                            $token = $env:TELEGRAM_BOT_TOKEN.Trim()
                             $chatId = '8809459598'
-                            $msg = "❌ DEPLOY FAILED`nProject: devops-test`nBranch: main`nJob: $env:JOB_NAME - Build #$env:BUILD_NUMBER`nCheck Jenkins Console Output."
 
-                            $uri = "https://api.telegram.org/bot$env:TELEGRAM_BOT_TOKEN/sendMessage"
+                            $me = Invoke-RestMethod -Uri "https://api.telegram.org/bot$token/getMe" -Method Get
+                            Write-Host "Telegram bot: $($me.result.username)"
+
+                            $msg = "DEPLOY FAILED`nProject: devops-test`nBranch: main`nJob: $env:JOB_NAME - Build #$env:BUILD_NUMBER`nCheck Jenkins Console Output."
 
                             Invoke-RestMethod `
-                                -Uri $uri `
+                                -Uri "https://api.telegram.org/bot$token/sendMessage" `
                                 -Method Post `
-                                -Body @{
-                                    chat_id = $chatId
-                                    text = $msg
-                                } | Out-Null
+                                -Body @{ chat_id = $chatId; text = $msg } | Out-Null
 
                             Write-Host 'Telegram failure notification sent'
                         '''
                     }
                 } catch {
-                    echo 'Telegram failure notification failed. Check credentials and chat ID.'
+                    echo 'Telegram failure notification failed; check the Jenkins log.'
                 }
             }
         }
