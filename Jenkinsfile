@@ -1,4 +1,4 @@
-﻿pipeline {
+pipeline {
     agent any
 
     triggers {
@@ -25,7 +25,7 @@
             steps {
                 echo 'Checking website files...'
                 bat 'if not exist index.html exit /b 1'
-                bat 'findstr /I "<title>" index.html'
+                bat 'findstr /I "&lt;title&gt;" index.html'
                 echo 'Build Success'
             }
         }
@@ -42,7 +42,9 @@
                         variable: 'NETLIFY_SITE_ID'
                     )
                 ]) {
-                    bat 'set "npm_config_cache=%WORKSPACE%\\.npm-cache" && npx --yes netlify-cli@latest deploy --prod --dir . --site "%NETLIFY_SITE_ID%" --auth "%NETLIFY_AUTH_TOKEN%"'
+                    bat '''
+                        set "npm_config_cache=%WORKSPACE%\\.npm-cache" && npx --yes netlify-cli@latest deploy --prod --dir . --site "%NETLIFY_SITE_ID%" --auth "%NETLIFY_AUTH_TOKEN%"
+                    '''
                 }
             }
         }
@@ -52,24 +54,60 @@
         success {
             echo 'PIPELINE SUCCESS'
             echo 'Website: https://effortless-griffin-565515.netlify.app'
-            
-            powershell '''
-                $token = "8993138145:AAEzFzpKWA2LKHYKyxXt30I39n7qby4lkoU"
-                $chatId = "880945958"
-                $msg = "✅ PIPELINE SUCCESS!`nWebsite: https://effortless-griffin-565515.netlify.app`nJob: $env:JOB_NAME - Build #$env:BUILD_NUMBER"
-                Invoke-RestMethod -Uri "https://api.telegram.org/bot8993138145:AAEzFzpKWA2LKHYKyxXt30I39n7qby4lkoU/getUpdates" -Method Post -Body @{ chat_id = $chatId; text =$msg }
-            '''
+
+            withCredentials([
+                string(
+                    credentialsId: 'telegram-token',
+                    variable: 'TELEGRAM_BOT_TOKEN'
+                )
+            ]) {
+                powershell '''
+                    $ErrorActionPreference = 'Stop'
+                    try {
+                        $chatId = '8809459598'
+                        $msg = "✅ DEPLOY SUCCESS`nProject: devops-test`nBranch: main`nURL: https://effortless-griffin-565515.netlify.app`nJob: $env:JOB_NAME - Build #$env:BUILD_NUMBER"
+
+                        $uri = "https://api.telegram.org/bot$env:TELEGRAM_BOT_TOKEN/sendMessage"
+                        Invoke-RestMethod -Uri $uri -Method Post -Body @{
+                            chat_id = $chatId
+                            text = $msg
+                        } | Out-Null
+
+                        Write-Host 'Telegram success notification sent.'
+                    } catch {
+                        Write-Host "WARNING: Telegram notification failed: $($_.Exception.Message)"
+                    }
+                '''
+            }
         }
 
         failure {
             echo 'PIPELINE FAILED - Check Console Output'
-            
-            powershell '''
-                $token = "8993138145:AAEzFzpKWA2LKHYKyxXt30I39n7qby4lkoU"
-                $chatId = "880945958"
-                $msg = "❌ PIPELINE FAILED!`nJob: $env:JOB_NAME - Build #$env:BUILD_NUMBER`nCheck Console Output!"
-                Invoke-RestMethod -Uri "https://api.telegram.org/bot8993138145:AAEzFzpKWA2LKHYKyxXt30I39n7qby4lkoU/getUpdates" -Method Post -Body @{ chat_id = $chatId; text =$msg }
-            '''
+
+            withCredentials([
+                string(
+                    credentialsId: 'telegram-token',
+                    variable: 'TELEGRAM_BOT_TOKEN'
+                )
+            ]) {
+                powershell '''
+                    $ErrorActionPreference = 'Stop'
+                    try {
+                        $chatId = '8809459598'
+                        $msg = "❌ DEPLOY FAILED`nProject: devops-test`nBranch: main`nJob: $env:JOB_NAME - Build #$env:BUILD_NUMBER`nCheck Jenkins Console Output."
+
+                        $uri = "https://api.telegram.org/bot$env:TELEGRAM_BOT_TOKEN/sendMessage"
+                        Invoke-RestMethod -Uri $uri -Method Post -Body @{
+                            chat_id = $chatId
+                            text = $msg
+                        } | Out-Null
+
+                        Write-Host 'Telegram failure notification sent.'
+                    } catch {
+                        Write-Host "WARNING: Telegram notification failed: $($_.Exception.Message)"
+                    }
+                '''
+            }
         }
     }
 }
