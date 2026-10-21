@@ -54,10 +54,10 @@
             echo 'Website: https://effortless-griffin-565515.netlify.app'
             
             powershell '''
-                $token = "8993138145:AAF0uEtnaiU74ZuM4gDKlCW0uL-s7xhmGTQ"
+                $token = "8993138145:AAEzFzpKWA2LKHYKyxXt30I39n7qby4lkoU"
                 $chatId = "880945958"
                 $msg = "✅ PIPELINE SUCCESS!`nWebsite: https://effortless-griffin-565515.netlify.app`nJob: $env:JOB_NAME - Build #$env:BUILD_NUMBER"
-                Invoke-RestMethod -Uri "https://api.telegram.org/bot$token/sendMessage" -Method Post -Body @{ chat_id = $chatId; text =$msg }
+                Invoke-RestMethod -Uri "https://api.telegram.org/bot8993138145:AAEzFzpKWA2LKHYKyxXt30I39n7qby4lkoU/getUpdates" -Method Post -Body @{ chat_id = $chatId; text =$msg }
             '''
         }
 
@@ -65,10 +65,10 @@
             echo 'PIPELINE FAILED - Check Console Output'
             
             powershell '''
-                $token = "8993138145:AAF0uEtnaiU74ZuM4gDKlCW0uL-s7xhmGTQ"
+                $token = "8993138145:AAEzFzpKWA2LKHYKyxXt30I39n7qby4lkoU"
                 $chatId = "880945958"
                 $msg = "❌ PIPELINE FAILED!`nJob: $env:JOB_NAME - Build #$env:BUILD_NUMBER`nCheck Console Output!"
-                Invoke-RestMethod -Uri "https://api.telegram.org/bot$token/sendMessage" -Method Post -Body @{ chat_id = $chatId; text =$msg }
+                Invoke-RestMethod -Uri "https://api.telegram.org/bot8993138145:AAEzFzpKWA2LKHYKyxXt30I39n7qby4lkoU/getUpdates" -Method Post -Body @{ chat_id = $chatId; text =$msg }
             '''
         }
     }
